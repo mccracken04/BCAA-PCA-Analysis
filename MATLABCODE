@@ -1,0 +1,129 @@
+nSample = 120; %can adjust this to any sample size 
+%0-20 is 19S37
+%21-40 is 18S385
+%41-60 is 19S42
+%61-80 is 17S86
+%81-100 is 16S105
+%101-120 is 19S1
+
+% Simulated BCAA concentrations (randomized with some noise)
+isovaleric = randn(nSample, 1) * 0.5 + 3; % mean ~3
+methyl = randn(nSample, 1) * 0.4 + 2;    % mean ~2
+tiglic = randn(nSample, 1) * 0.6 + 4;     % mean ~4
+
+% Simulate tomato flavor (weighted sum of BCAAs with noise)
+flavor = 0.5 * isovaleric + 0.3 * methyl + 0.2 * tiglic + randn(nSample, 1) * 0.2;
+%%
+% Combine into a data matrix for PCA
+data = [isovaleric, methyl, tiglic]; %flavor will be used to color code later
+%%
+%this is showing the concentration of the respective BCAAs
+
+figure;
+bar(data);
+hold on;
+title('Samples of BCAAs');
+xlabel('BCAAs');
+ylabel('Concentration');
+legend('Isovaleric','Methyl','Tiglic','Location','best')
+hold off;
+
+%%
+mean(data)
+std(data)
+
+%% 
+%normalize data
+for j=1:3
+    for i=1:120
+        datam(i,j)=data(i,j)-mean(data(:,j));
+    end
+end
+
+%%
+%normalize std dev
+for j=1:3
+    for i=1:120
+        datast(i,j)=datam(i,j)/std(datam(:,j));
+    end
+end
+
+%%
+mean(datam)
+
+%%
+%make covariance matrix
+cmat=cov(datast);
+
+%%
+%eigenvectors and eigenvalues
+[evec,eval]=eig(-cmat);
+%%
+%get scores and visualize them
+scores=-datast*evec;
+bar(scores(:,1))
+
+%%
+figure;
+
+% Scatter plot using the first two principal components (PC1 and PC2)
+% Color the points based on the 'flavor' vector (categorical or numerical)
+
+scatter(scores(:, 1), scores(:, 2), 50, flavor, 'filled');
+
+% Add labels and title
+xlabel('PC1');
+ylabel('PC2');
+title('PCA of BCAAs with Color-coded Flavor');
+colorbar;
+
+%%
+% Create a vector to store the dominant BCAA for each sample (1=Isovaleric, 2=Methyl, 3=Tiglic)
+[~, dominantBCAA] = max(scores, [], 2);
+
+% Create a new figure for the PCA plot
+figure;
+
+% Loop through the samples and color-code based on dominant BCAA
+hold on;
+scatter(scores(dominantBCAA == 1, 1), scores(dominantBCAA == 1, 2), 50, 'r', 'filled'); % Isovaleric Acid (Red)
+scatter(scores(dominantBCAA == 2, 1), scores(dominantBCAA == 2, 2), 50, 'b', 'filled'); % Methyl Butenal (Blue)
+scatter(scores(dominantBCAA == 3, 1), scores(dominantBCAA == 3, 2), 50, 'g', 'filled'); % Tiglic Aldehyde (Green)
+hold off;
+
+% Add labels and title
+xlabel('PC1');
+ylabel('PC2');
+title('PCA of BCAAs with Dominant BCAA Color-coding');
+
+% Add a legend to indicate which color corresponds to which BCAA
+legend({'Isovaleric Acid', 'Methyl Butenal', 'Tiglic Aldehyde'}, 'Location', 'best');
+
+%%
+% get loadings
+% loadings=sqrt(eval)*evec
+loadings=zeros(4,4);
+for j=1:3
+     fact=sqrt(-eval(j,j));
+        for i=1:3
+          loadings(i,j)=fact*evec(i,j);
+        end
+end
+
+%%
+% Constructing a loadings barplot to see how strongly a particluar BCAA is
+% conributing to a PC
+
+figure;
+
+% Bar plot of the loadings for PC1 and PC2
+bar(loadings(:, 1:2));
+
+% Add labels
+xticklabels({'Isovaleric Acid', 'Methyl Butenal', 'Tiglic Aldehyde'}); % Label the BCAAs
+xlabel('BCAAs');
+ylabel('Loading Value');
+title('Loadings for PC1 and PC2');
+
+% Add a legend 
+legend({'PC1', 'PC2'}, 'Location', 'best');
