@@ -1,3 +1,6 @@
+% Set seed for reproducability
+rng(83);
+
 nSample = 120; %can adjust this to any sample size 
 %0-20 is 19S37
 %21-40 is 18S385
